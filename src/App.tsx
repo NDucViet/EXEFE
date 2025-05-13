@@ -6,6 +6,7 @@ import Register from './pages/Register';
 import RoomList from './pages/RoomList';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/main.css';
+import Login from './components/auth/Login';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dang-ky" element={<Register />} />
             <Route path="/tim-tro" element={<RoomList />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </main>
         <Footer />

@@ -8,7 +8,7 @@ const Footer = () => {
                     <div className="col-lg-3 mb-4 mb-lg-0">
                         <Link to="/" className="d-inline-flex align-items-center mb-3">
                             <div className="d-flex align-items-center">
-                                <img src="./img/logo roomnear.png" alt="RoomNear" style={{ width: '200px', height: '200px' }} />
+                                <img src="./img/logo-roomnear.png" alt="RoomNear" style={{ width: '200px', height: '200px' }} />
                             </div>
                         </Link>
                     </div>

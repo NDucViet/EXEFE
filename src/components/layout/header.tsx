@@ -1,20 +1,38 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import type { UserResponse } from '../../types/User';
+import { useState, useEffect } from 'react';
+import type { User } from '../../types/User';
+import './header.css';
 
 interface HeaderProps {
-    user?: UserResponse;
+    user?: User;
+    onLogout?: () => void;
 }
 
-const Header = ({ user }: HeaderProps) => {
+const Header = ({ user, onLogout }: HeaderProps) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 50);
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        handleScroll(); // Check initial scroll position
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     return (
-        <header className="bg-white shadow-sm">
-            <nav className="navbar navbar-expand-lg navbar-light">
+        <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
+            <nav className="navbar navbar-expand-lg">
                 <div className="container">
                     <Link to="/" className="navbar-brand d-flex align-items-center">
-                        <span className="fw-bold text-primary fs-4">ROOMNEAR</span>
+                        <div className="d-flex align-items-center">
+                            <img src="./img/logo-roomnear.png" alt="RoomNear" style={{ width: '50px', height: '50px' }} />
+                            <span className="fw-bold fs-4 ms-2">
+                                ROOM<span>NEAR</span>
+                            </span>
+                        </div>
                     </Link>
 
                     <button
@@ -56,7 +74,7 @@ const Header = ({ user }: HeaderProps) => {
                             ) : (
                                 <div className="dropdown">
                                     <button
-                                        className="btn btn-link dropdown-toggle text-dark text-decoration-none"
+                                        className="btn btn-link dropdown-toggle text-decoration-none"
                                         type="button"
                                         id="userDropdown"
                                         data-bs-toggle="dropdown"
@@ -65,10 +83,19 @@ const Header = ({ user }: HeaderProps) => {
                                         {user.name}
                                     </button>
                                     <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                        <li><Link to="/ho-so" className="dropdown-item">Hồ sơ</Link></li>
-                                        <li><Link to="/phong-da-dang" className="dropdown-item">Phòng đã đăng</Link></li>
+                                        <li><Link to="/ho-so" className="dropdown-item"><i className="fas fa-user-edit me-2"></i>Hồ sơ</Link></li>
+                                        <li><Link to="/phong-da-dang" className="dropdown-item"><i className="fas fa-list me-2"></i>Phòng đã đăng</Link></li>
                                         <li><hr className="dropdown-divider" /></li>
-                                        <li><button onClick={() => {/* Add logout logic */ }} className="dropdown-item">Đăng xuất</button></li>
+                                        <li>
+                                            <button 
+                                                onClick={onLogout} 
+                                                className="dropdown-item"
+                                                disabled={!onLogout}
+                                            >
+                                                <i className="fas fa-sign-out-alt me-2"></i>
+                                                Đăng xuất
+                                            </button>
+                                        </li>
                                     </ul>
                                 </div>
                             )}
