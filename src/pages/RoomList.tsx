@@ -43,7 +43,7 @@ const RoomList = () => {
     const [activeFilter, setActiveFilter] = useState('tất cả');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Mock data - replace with actual API call
+    
     const rooms: Room[] = [
         {
             id: '1',
