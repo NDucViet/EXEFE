@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import React from 'react';
@@ -11,7 +11,7 @@ import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 // Lazy load components
 const ZoomToMarker = lazy(() => import('../components/ZoomToMarker'));
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
     iconSize: [25, 41],
@@ -65,7 +65,7 @@ const RoomList = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
-    
+
     const rooms: Room[] = [
         {
             id: '1',
@@ -184,7 +184,7 @@ const RoomList = () => {
     const handleRoomClick = (room: Room, e?: React.MouseEvent) => {
         // Prevent event bubbling
         e?.stopPropagation();
-        
+
         if (selectedRoom?.id === room.id) {
             setSelectedRoom(null);
         } else {
@@ -203,14 +203,14 @@ const RoomList = () => {
         },
         { lat: 0, lng: 0 }
     );
-    
+
     center.lat /= rooms.length;
     center.lng /= rooms.length;
 
     return (
         <div className="room-list-page">
             {/* Map Section - Increased height */}
-            <div style={{ 
+            <div style={{
                 height: '600px', // Increased from 400px to 600px
                 width: '100%',
                 marginBottom: '2rem', // Added margin for better spacing
@@ -239,25 +239,25 @@ const RoomList = () => {
                                         click: () => handleRoomClick(room),
                                     }}
                                 >
-                                    <Tooltip 
+                                    <Tooltip
                                         permanent
                                         direction="top"
                                         offset={[0, -20]}
                                         opacity={1}
                                         interactive={true}
                                     >
-                                        <div 
+                                        <div
                                             onClick={(e) => handleRoomClick(room, e)}
                                             style={{
                                                 ...tooltipStyle.container,
                                                 cursor: 'pointer',
                                                 transform: selectedRoom?.id === room.id ? 'scale(1.1)' : 'scale(1)',
                                                 transition: 'all 0.2s ease',
-                                                backgroundColor: selectedRoom?.id === room.id 
-                                                    ? 'rgba(52, 152, 219, 0.95)' 
+                                                backgroundColor: selectedRoom?.id === room.id
+                                                    ? 'rgba(52, 152, 219, 0.95)'
                                                     : 'rgba(255, 255, 255, 0.95)',
-                                                color: selectedRoom?.id === room.id 
-                                                    ? '#ffffff' 
+                                                color: selectedRoom?.id === room.id
+                                                    ? '#ffffff'
                                                     : '#2c3e50',
                                                 border: selectedRoom?.id === room.id
                                                     ? '2px solid #2980b9'
@@ -334,7 +334,7 @@ const RoomList = () => {
                                 </Marker>
                                 {room.location && (
                                     <Suspense fallback={null}>
-                                        <ZoomToMarker 
+                                        <ZoomToMarker
                                             position={[room.location.lat, room.location.lng]}
                                             isSelected={selectedRoom?.id === room.id}
                                         />
@@ -387,8 +387,8 @@ const RoomList = () => {
                 {/* Room Grid */}
                 <div className="row g-4">
                     {rooms.map(room => (
-                        <div 
-                            key={room.id} 
+                        <div
+                            key={room.id}
                             className="col-md-6 col-lg-4"
                             style={{ cursor: 'pointer' }}
                             onClick={() => {

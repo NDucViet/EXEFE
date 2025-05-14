@@ -25,7 +25,7 @@
 
 /* Default state (not scrolled) */
 .header:not(.scrolled) .nav-link {
-    color: #ffffff !important;
+    color: #3b95df !important;
     font-weight: 600;
     font-size: 1.1rem;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
@@ -134,4 +134,4 @@
         box-shadow: none !important;
         outline: none !important;
     }
-} 
+}

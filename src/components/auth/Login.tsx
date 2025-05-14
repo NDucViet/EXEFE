@@ -1,20 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Login.css';
-
-interface LoginFormData {
-    email: string;
-    password: string;
-}
-
 
 const Login = () => {
-    const [formData, setFormData] = useState<LoginFormData>({
+    const [formData, setFormData] = useState({
         email: '',
-        password: ''
+        password: '',
     });
-    const [rememberMe, setRememberMe] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -24,143 +15,122 @@ const Login = () => {
         }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            // TODO: Replace with your API endpoint
-            const response = await fetch('YOUR_API_URL/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: formData.email,
-                    password: formData.password,
-                    rememberMe
-                }),
-            });
-
-            
-        } catch (error) {
-            console.error('Login error:', error);
-        }
+        // Handle login logic here
+        console.log('Form submitted:', formData);
     };
 
     const handleGoogleLogin = () => {
-        // TODO: Implement Google login
+        // Handle Google login here
         console.log('Google login clicked');
     };
 
     const handleFacebookLogin = () => {
-        // TODO: Implement Facebook login
+        // Handle Facebook login here
         console.log('Facebook login clicked');
     };
 
     return (
-        <div className="login-container">
-            <div className="login-box">
-                <h2 className="text-center mb-4">Đăng nhập</h2>
-                
-                {/* Social Login Buttons */}
-                <div className="social-login mb-4">
-                    <button 
-                        className="btn btn-outline-primary w-100 mb-3 d-flex align-items-center justify-content-center gap-2"
-                        onClick={handleGoogleLogin}
-                        type="button"
-                    >
-                        <i className="fab fa-google"></i>
-                        Đăng nhập với Google
-                    </button>
-                    <button 
-                        className="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2"
-                        onClick={handleFacebookLogin}
-                        type="button"
-                    >
-                        <i className="fab fa-facebook"></i>
-                        Đăng nhập với Facebook
-                    </button>
+        <div className="login-page min-vh-100 d-flex align-items-center"
+            style={{
+                background: 'linear-gradient(180deg, rgba(13,110,253,0.2) 0%, rgba(255,255,255,1) 100%)',
+                paddingTop: '76px', // Height of the header
+                paddingBottom: '2rem'
+            }}>
+            <div className="container">
+                <div className="row justify-content-center">
+                    <div className="col-md-6 col-lg-5">
+                        <div className="text-center mb-4">
+                            <Link to="/" className="text-decoration-none">
+                                <h1 className="text-primary h3 mb-4">ROOMNEAR</h1>
+                            </Link>
+                        </div>
+
+                        <div className="card border-0 shadow-sm">
+                            <div className="card-body p-4">
+                                <div className="text-center mb-4">
+                                    <h2 className="h4 mb-1">Đăng nhập</h2>
+                                    <p className="text-muted small">Chào mừng bạn trở lại</p>
+                                </div>
+
+                                <form onSubmit={handleSubmit}>
+                                    <div className="mb-3">
+                                        <label htmlFor="email" className="form-label small">Email</label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            id="email"
+                                            name="email"
+                                            placeholder="Nhập email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <label htmlFor="password" className="form-label small">Mật khẩu</label>
+                                            <Link to="/quen-mat-khau" className="text-primary text-decoration-none small">
+                                                Quên mật khẩu?
+                                            </Link>
+                                        </div>
+                                        <input
+                                            type="password"
+                                            className="form-control"
+                                            id="password"
+                                            name="password"
+                                            placeholder="Nhập mật khẩu"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    <button type="submit" className="btn btn-primary w-100 mb-3">
+                                        Đăng nhập
+                                    </button>
+
+                                    <div className="text-center mb-3">
+                                        <p className="text-muted small mb-0">Hoặc đăng nhập với</p>
+                                    </div>
+
+                                    <div className="d-flex gap-2 mb-3">
+                                        <button
+                                            type="button"
+                                            className="btn btn-social btn-google w-50 d-flex align-items-center justify-content-center gap-2"
+                                            onClick={handleGoogleLogin}
+                                        >
+                                            <img
+                                                src="/img/google.svg"
+                                                alt="Google"
+                                                style={{ width: '18px', height: '18px' }}
+                                            />
+                                            Google
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-social btn-facebook w-50 d-flex align-items-center justify-content-center gap-2"
+                                            onClick={handleFacebookLogin}
+                                        >
+                                            <img
+                                                src="/img/facebook.svg"
+                                                alt="Facebook"
+                                                style={{ width: '18px', height: '18px' }}
+                                            />
+                                            Facebook
+                                        </button>
+                                    </div>
+
+                                    <p className="text-center text-muted small">
+                                        Chưa có tài khoản? <Link to="/dang-ky" className="text-primary text-decoration-none">Đăng ký</Link>
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <div className="divider">
-                    <span>Hoặc</span>
-                </div>
-
-                {/* Login Form */}
-                <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
-                        <label htmlFor="email" className="form-label">Email</label>
-                        <div className="input-group">
-                            <span className="input-group-text">
-                                <i className="fas fa-envelope"></i>
-                            </span>
-                            <input
-                                type="email"
-                                className="form-control"
-                                id="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="Nhập email của bạn"
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mb-3">
-                        <label htmlFor="password" className="form-label">Mật khẩu</label>
-                        <div className="input-group">
-                            <span className="input-group-text">
-                                <i className="fas fa-lock"></i>
-                            </span>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                className="form-control"
-                                id="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                placeholder="Nhập mật khẩu"
-                                required
-                            />
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mb-3 d-flex justify-content-between align-items-center">
-                        <div className="form-check">
-                            <input
-                                type="checkbox"
-                                className="form-check-input"
-                                id="rememberMe"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                            />
-                            <label className="form-check-label" htmlFor="rememberMe">
-                                Ghi nhớ đăng nhập
-                            </label>
-                        </div>
-                        <Link to="/quen-mat-khau" className="text-primary text-decoration-none">
-                            Quên mật khẩu?
-                        </Link>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary w-100 mb-3">
-                        Đăng nhập
-                    </button>
-
-                    <p className="text-center mb-0">
-                        Chưa có tài khoản? {' '}
-                        <Link to="/dang-ky" className="text-primary text-decoration-none">
-                            Đăng ký ngay
-                        </Link>
-                    </p>
-                </form>
             </div>
         </div>
     );
