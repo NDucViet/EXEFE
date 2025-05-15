@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Fix Leaflet default marker icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -64,7 +65,12 @@ const RoomList = () => {
     const [activeFilter, setActiveFilter] = useState('tất cả');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+    const navigate = useNavigate();
 
+    const handleViewDetail = (roomId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent triggering parent click events
+        navigate(`/phong/${roomId}`);
+    };
 
     const rooms: Room[] = [
         {
@@ -208,7 +214,7 @@ const RoomList = () => {
     center.lng /= rooms.length;
 
     return (
-        <div className="room-list-page">
+        <div className="room-list-page" style={{ backgroundImage: 'url("./img/backgroundRoomList.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', minHeight: '100vh', padding: '2rem' }}>
             {/* Map Section - Increased height */}
             <div style={{
                 height: '600px', // Increased from 400px to 600px
@@ -292,6 +298,24 @@ const RoomList = () => {
                                             }}>
                                                 {room.price.toLocaleString()}đ
                                             </span>
+                                            <Link 
+                                                to={`/phong/${room.id}`}
+                                                style={{
+                                                    display: 'block',
+                                                    textDecoration: 'none',
+                                                    backgroundColor: selectedRoom?.id === room.id ? '#ffffff' : '#3498db',
+                                                    color: selectedRoom?.id === room.id ? '#3498db' : '#ffffff',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    marginTop: '4px',
+                                                    fontSize: '11px',
+                                                    textAlign: 'center',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Xem chi tiết
+                                            </Link>
                                         </div>
                                     </Tooltip>
                                     <Popup>
@@ -395,7 +419,6 @@ const RoomList = () => {
                                 handleRoomClick(room);
                                 if (room.location) {
                                     setSelectedRoom(room);
-                                    // Scroll to map when clicking a room card
                                     window.scrollTo({
                                         top: 0,
                                         behavior: 'smooth'
@@ -415,6 +438,14 @@ const RoomList = () => {
                                         <span><i className="bi bi-house-door me-1"></i>{room.bedrooms} Phòng</span>
                                         <span><i className="bi bi-droplet me-1"></i>{room.bathrooms} Phòng tắm</span>
                                         <span><i className="bi bi-arrows me-1"></i>{room.area}m²</span>
+                                    </div>
+                                    <div className="mt-3 d-grid">
+                                        <button
+                                            className="btn btn-outline-primary"
+                                            onClick={(e) => handleViewDetail(room.id, e)}
+                                        >
+                                            Xem chi tiết
+                                        </button>
                                     </div>
                                 </div>
                             </div>
