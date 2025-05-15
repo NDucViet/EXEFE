@@ -4,6 +4,7 @@ import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import Register from './pages/Register';
 import RoomList from './pages/RoomList';
+import SignIn from './pages/SignIn';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './styles/main.css';
 
@@ -19,6 +20,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dang-ky" element={<Register />} />
             <Route path="/tim-tro" element={<RoomList />} />
+            {/* <Route path="/dang-nhap"element={<SignIn/>}/> */}
           </Routes>
         </main>
         <Footer />
