@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -7,6 +7,7 @@ import L from 'leaflet';
 // Fix Leaflet default marker icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import axios from 'axios';
 
 const DefaultIcon = L.icon({
     iconUrl: icon,
@@ -39,71 +40,28 @@ interface Room {
     location: number;
     absoluteLocation: AbsoluteLocation;
     images: string[];
-    contact: {
-        name: string;
-        phone: string;
-        avatar: string;
-    };
 }
 
 const RoomDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [room, setRoom] = useState<Room | null>(null);
     const [loading, setLoading] = useState(true);
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     useEffect(() => {
-        const fetchRoomDetails = () => {
-            const mockRoom: Room = {
-                id: 6,
-                name: "Phòng trọ Minh Tâm",
-                address: "123 Lê Lợi, Đà Nẵng",
-                ownerId: "895c00e7-626c-4568-29f6-08dd719eaf77",
-                price: 1200000,
-                status: 1,
-                numberOfPeople: 2,
-                area: 20.5,
-                description: "Phòng sạch sẽ, an ninh tốt",
-                createAt: "2025-04-20T14:07:47.68",
-                rate: null,
-                location: 1,
-                absoluteLocation: {
-                    id: 1,
-                    ing: 106.68271,
-                    lat: 10.77282,
-                    houseId: 6
-                },
-                images: [
-                    '../img/imgLandingPage.png',
-                    '../img/imgLandingPage.png',
-                    '../img/imgLandingPage.png',
-                    '../img/imgLandingPage.png'
-                ],
-                contact: {
-                    name: 'Minh Tâm',
-                    phone: '0900450000',
-                    avatar: '../img/avatar.jpg'
-                }
-            };
-
-            setRoom(mockRoom);
-            setLoading(false);
+        const fetchRoomDetails = async () => {
+            try {
+                const response = await axios.get(`https://localhost:7135/api/House/GetHouseById?id=${id}`);
+                const data = await response.data;
+                setRoom(data);
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching room details:', error);
+                setLoading(false);
+            }
         };
 
         fetchRoomDetails();
     }, [id]);
-
-    const nextImage = () => {
-        if (room) {
-            setCurrentImageIndex((prev) => (prev + 1) % room.images.length);
-        }
-    };
-
-    const prevImage = () => {
-        if (room) {
-            setCurrentImageIndex((prev) => (prev - 1 + room.images.length) % room.images.length);
-        }
-    };
 
     if (loading || !room) {
         return (
@@ -114,6 +72,10 @@ const RoomDetail: React.FC = () => {
             </div>
         );
     }
+
+    const defaultImage = '/img/imgLandingPage.png';
+    const mainImage = room.images && room.images.length > 0 ? room.images[0] : defaultImage;
+    const additionalImages = room.images && room.images.length > 1 ? room.images.slice(1, 4) : [];
 
     return (
         <div 
@@ -148,11 +110,11 @@ const RoomDetail: React.FC = () => {
                     <div className="container-fluid px-0">
                         <div className="row g-2">
                             <div className="col-12 col-md-8">
-                                <img src={room.images[0]} alt="Ảnh chính" className="w-100" style={{ height: '350px', objectFit: 'cover', borderRadius: '8px' }} />
+                                <img src={mainImage} alt="Ảnh chính" className="w-100" style={{ height: '350px', objectFit: 'cover', borderRadius: '8px' }} />
                             </div>
                             <div className="col-md-4 d-none d-md-block">
                                 <div className="row g-2">
-                                    {room.images.slice(1, 4).map((image, index) => (
+                                    {additionalImages.map((image, index) => (
                                         <div key={index} className="col-12">
                                             <img src={image} alt={`Ảnh phòng ${index + 2}`} className="w-100" style={{ height: '114px', objectFit: 'cover', borderRadius: '8px' }} />
                                         </div>
@@ -226,15 +188,15 @@ const RoomDetail: React.FC = () => {
                         <div className="bg-white rounded-3 p-3" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                             <div className="d-flex align-items-center mb-3">
                                 <img
-                                    src={room.contact.avatar}
-                                    alt={room.contact.name}
+                                    src={'/img/imgLandingPage.png'}
+                                    alt={'cc'}
                                     className="rounded-circle me-2"
                                     width="48"
                                     height="48"
                                     style={{ objectFit: 'cover' }}
                                 />
                                 <div>
-                                    <h6 className="mb-1 fw-bold">{room.contact.name}</h6>
+                                    <h6 className="mb-1 fw-bold">{room.name}</h6>
                                     <div className="text-warning" style={{ fontSize: '12px' }}>
                                         {[...Array(5)].map((_, index) => (
                                             <i
@@ -248,7 +210,7 @@ const RoomDetail: React.FC = () => {
                             <div className="mb-3">
                                 <div className="d-flex align-items-center">
                                     <h6 className="mb-0 me-2 fw-bold" style={{ fontSize: '14px' }}>SĐT:</h6>
-                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>{room.contact.phone}</span>
+                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>1232341341</span>
                                 </div>
                             </div>
                             <div className="d-grid gap-2">
@@ -269,4 +231,4 @@ const RoomDetail: React.FC = () => {
     );
 };
 
-export default RoomDetail; 
+export default RoomDetail;

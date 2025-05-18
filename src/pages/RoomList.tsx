@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 // Fix Leaflet default marker icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import axios from 'axios';
 
 // Lazy load components
 const ZoomToMarker = lazy(() => import('../components/ZoomToMarker'));
@@ -67,7 +68,7 @@ interface Room {
     rate: number | null;
     location: number;
     absoluteLocation: AbsoluteLocation;
-    image: string;
+    images: string[];
 }
 
 const RoomList = () => {
@@ -82,11 +83,11 @@ const RoomList = () => {
     useEffect(() => {
         const fetchRooms = async () => {
             try {
-                const response = await fetch('https://localhost:7135/api/House/GetAllHouse');
-                if (!response.ok) {
+                const response = await axios.post('https://localhost:7135/api/House/GetAllHouse');
+                if (!response.data) {
                     throw new Error('Failed to fetch rooms');
                 }
-                const data = await response.json();
+                const data = await response.data;
                 setRooms(data);
                 setLoading(false);
             } catch (err) {
@@ -366,7 +367,12 @@ const RoomList = () => {
                                 }}
                             >
                                 <div className={`card h-100 border-0 shadow-sm ${selectedRoom?.id === room.id ? 'border border-primary' : ''}`}>
-                                    <img src={room.image || './img/default-room.jpg'} className="card-img-top" alt={room.name} style={{ height: '200px', objectFit: 'cover' }} />
+                                    <img 
+                                        src={room.images && room.images.length > 0 ? room.images[0] : './img/imgLandingPage.png'} 
+                                        className="card-img-top" 
+                                        alt={room.name} 
+                                        style={{ height: '200px', objectFit: 'cover' }} 
+                                    />
                                     <div className="card-body">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
                                             <h5 className="card-title mb-0">{room.name}</h5>

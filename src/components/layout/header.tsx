@@ -1,16 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import type { User } from '../../types/User';
+import { useAuth } from '../../contexts/AuthContext';
 import './header.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-interface HeaderProps {
-    user?: User;
-    onLogout?: () => void;
-}
-
-const Header = ({ user, onLogout }: HeaderProps) => {
+const Header = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const { user, isAuthenticated, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -21,6 +21,15 @@ const Header = ({ user, onLogout }: HeaderProps) => {
         handleScroll(); // Check initial scroll position
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    const handleLogout = () => {
+        logout();
+        window.location.href = '/';
+    };
+
+    const toggleDropdown = () => {
+        setIsDropdownOpen(!isDropdownOpen);
+    };
 
     return (
         <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
@@ -66,31 +75,33 @@ const Header = ({ user, onLogout }: HeaderProps) => {
                         </ul>
 
                         <div className="d-flex align-items-center">
-                            {!user ? (
+                            {!isAuthenticated ? (
                                 <>
                                     <Link to="/dang-ky" className="btn btn-outline-primary me-2">Đăng ký</Link>
                                     <Link to="/dang-nhap" className="btn btn-primary">Đăng nhập</Link>
                                 </>
                             ) : (
-                                <div className="dropdown">
+                                <div className={`dropdown ${isDropdownOpen ? 'show' : ''}`}>
                                     <button
-                                        className="btn btn-link dropdown-toggle text-decoration-none"
+                                        className="btn btn-link dropdown-toggle text-decoration-none d-flex align-items-center"
                                         type="button"
-                                        id="userDropdown"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
+                                        onClick={toggleDropdown}
+                                        aria-expanded={isDropdownOpen}
                                     >
-                                        {user.name}
+                                        <span>{user?.name || 'Tài khoản'}</span>
                                     </button>
-                                    <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                        <li><Link to="/ho-so" className="dropdown-item"><i className="fas fa-user-edit me-2"></i>Hồ sơ</Link></li>
-                                        <li><Link to="/phong-da-dang" className="dropdown-item"><i className="fas fa-list me-2"></i>Phòng đã đăng</Link></li>
+                                    <ul className={`dropdown-menu dropdown-menu-end shadow ${isDropdownOpen ? 'show' : ''}`}>
                                         <li><hr className="dropdown-divider" /></li>
+                                        <li><Link to="/ho-so" className="dropdown-item"><i className="fas fa-user me-2"></i>Hồ sơ cá nhân</Link></li>
+                                        <li><Link to="/phong-da-dang" className="dropdown-item"><i className="fas fa-list me-2"></i>Phòng đã đăng</Link></li>
+                                        <li><Link to="/yeu-thich" className="dropdown-item"><i className="fas fa-heart me-2"></i>Phòng yêu thích</Link></li>
+                                        <li><Link to="/thong-bao" className="dropdown-item"><i className="fas fa-bell me-2"></i>Thông báo</Link></li>
+                                        <li><hr className="dropdown-divider" /></li>
+                                        <li><Link to="/cai-dat" className="dropdown-item"><i className="fas fa-cog me-2"></i>Cài đặt</Link></li>
                                         <li>
                                             <button 
-                                                onClick={onLogout} 
-                                                className="dropdown-item"
-                                                disabled={!onLogout}
+                                                onClick={handleLogout} 
+                                                className="dropdown-item text-danger"
                                             >
                                                 <i className="fas fa-sign-out-alt me-2"></i>
                                                 Đăng xuất
