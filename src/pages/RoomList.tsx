@@ -1,12 +1,14 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Fix Leaflet default marker icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import axios from 'axios';
 
 // Lazy load components
 const ZoomToMarker = lazy(() => import('../components/ZoomToMarker'));
@@ -45,141 +47,62 @@ const tooltipStyle = {
     }
 };
 
+interface AbsoluteLocation {
+    id: number;
+    ing: number;
+    lat: number;
+    houseId: number;
+}
+
 interface Room {
-    id: string;
-    title: string;
-    price: number;
+    id: number;
+    name: string;
     address: string;
-    image: string;
-    bedrooms: number;
-    bathrooms: number;
-    area: number;
-    location?: {
-        lat: number;
-        lng: number;
-    };
+    ownerId: string;
+    price: number;
+    status: number;
+    numberOfPeople: number | null;
+    area: number | null;
+    description: string | null;
+    createAt: string;
+    rate: number | null;
+    location: number;
+    absoluteLocation: AbsoluteLocation;
+    images: string[];
 }
 
 const RoomList = () => {
     const [activeFilter, setActiveFilter] = useState('tất cả');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
+    useEffect(() => {
+        const fetchRooms = async () => {
+            try {
+                const response = await axios.post('https://localhost:7135/api/House/GetAllHouse');
+                if (!response.data) {
+                    throw new Error('Failed to fetch rooms');
+                }
+                const data = await response.data;
+                setRooms(data);
+                setLoading(false);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An error occurred');
+                setLoading(false);
+            }
+        };
 
-    const rooms: Room[] = [
-        {
-            id: '1',
-            title: 'HOMESTAY GẦN BIỂN MỸ KHÊ',
-            price: 3500000,
-            address: '15 Hoàng Sa, Phước Mỹ, Sơn Trà, Đà Nẵng',
-            image: './img/room1.jpg',
-            bedrooms: 2,
-            bathrooms: 1,
-            area: 45,
-            location: {
-                lat: 16.064167,
-                lng: 108.245809
-            }
-        },
-        {
-            id: '2',
-            title: 'PHÒNG TRỌ GẦN ĐH KINH TẾ',
-            price: 2800000,
-            address: '121 Ngô Sĩ Liên, Hòa Khánh Nam, Liên Chiểu, Đà Nẵng',
-            image: './img/room2.jpg',
-            bedrooms: 1,
-            bathrooms: 1,
-            area: 30,
-            location: {
-                lat: 16.079809,
-                lng: 108.149869
-            }
-        },
-        {
-            id: '3',
-            title: 'CCMN GẦN DRAGON BRIDGE',
-            price: 4200000,
-            address: '68 Bạch Đằng, Hải Châu, Đà Nẵng',
-            image: './img/room3.jpg',
-            bedrooms: 2,
-            bathrooms: 1,
-            area: 50,
-            location: {
-                lat: 16.072498,
-                lng: 108.224907
-            }
-        },
-        {
-            id: '4',
-            title: 'PHÒNG TRỌ CAO CẤP HÒA KHÁNH',
-            price: 3000000,
-            address: '55 Ngô Thì Nhậm, Hòa Khánh Bắc, Liên Chiểu, Đà Nẵng',
-            image: './img/room1.jpg',
-            bedrooms: 1,
-            bathrooms: 1,
-            area: 35,
-            location: {
-                lat: 16.085676,
-                lng: 108.158669
-            }
-        },
-        {
-            id: '5',
-            title: 'STUDIO GẦN CÔNG VIÊN APEC',
-            price: 5000000,
-            address: '25 Như Nguyệt, An Hải Bắc, Sơn Trà, Đà Nẵng',
-            image: './img/room2.jpg',
-            bedrooms: 1,
-            bathrooms: 1,
-            area: 40,
-            location: {
-                lat: 16.065836,
-                lng: 108.232670
-            }
-        },
-        {
-            id: '6',
-            title: 'PHÒNG TRỌ GẦN CHỢ HÀN',
-            price: 3800000,
-            address: '90 Hùng Vương, Hải Châu, Đà Nẵng',
-            image: './img/room3.jpg',
-            bedrooms: 2,
-            bathrooms: 1,
-            area: 45,
-            location: {
-                lat: 16.067789,
-                lng: 108.221345
-            }
-        },
-        {
-            id: '7',
-            title: 'PHÒNG TRỌ SINH VIÊN GẦN ĐH BÁCH KHOA',
-            price: 2500000,
-            address: '45 Ngô Văn Sở, Hòa Khánh Nam, Liên Chiểu, Đà Nẵng',
-            image: './img/room1.jpg',
-            bedrooms: 1,
-            bathrooms: 1,
-            area: 25,
-            location: {
-                lat: 16.075643,
-                lng: 108.149098
-            }
-        },
-        {
-            id: '8',
-            title: 'CCMN GẦN BÃI TẮM PHẠM VĂN ĐỒNG',
-            price: 4500000,
-            address: '168 Võ Nguyên Giáp, Phước Mỹ, Sơn Trà, Đà Nẵng',
-            image: './img/room2.jpg',
-            bedrooms: 2,
-            bathrooms: 1,
-            area: 55,
-            location: {
-                lat: 16.070123,
-                lng: 108.245123
-            }
-        }
-    ];
+        fetchRooms();
+    }, []);
+
+    const handleViewDetail = (roomId: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigate(`/phong/${roomId}`);
+    };
 
     const handleRoomClick = (room: Room, e?: React.MouseEvent) => {
         // Prevent event bubbling
@@ -195,20 +118,40 @@ const RoomList = () => {
     // Calculate center position based on all room locations
     const center = rooms.reduce(
         (acc, room) => {
-            if (room.location) {
-                acc.lat += room.location.lat;
-                acc.lng += room.location.lng;
+            if (room.absoluteLocation) {
+                acc.lat += room.absoluteLocation.lat;
+                acc.lng += room.absoluteLocation.ing;
             }
             return acc;
         },
-        { lat: 0, lng: 0 }
+        { lat: 16.047079, lng: 108.206230 } // Default center (Da Nang city)
     );
 
-    center.lat /= rooms.length;
-    center.lng /= rooms.length;
+    if (rooms.length > 0) {
+        center.lat /= rooms.length;
+        center.lng /= rooms.length;
+    }
+
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Đang tải...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="alert alert-danger m-3" role="alert">
+                {error}
+            </div>
+        );
+    }
 
     return (
-        <div className="room-list-page">
+        <div className="room-list-page" style={{ backgroundImage: 'url("./img/backgroundRoomList.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', minHeight: '100vh', padding: '2rem' }}>
             {/* Map Section - Increased height */}
             <div style={{
                 height: '600px', // Increased from 400px to 600px
@@ -231,10 +174,10 @@ const RoomList = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     {rooms.map((room) => (
-                        room.location && (
+                        room.absoluteLocation && (
                             <React.Fragment key={room.id}>
                                 <Marker
-                                    position={[room.location.lat, room.location.lng]}
+                                    position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
                                     eventHandlers={{
                                         click: () => handleRoomClick(room),
                                     }}
@@ -283,7 +226,7 @@ const RoomList = () => {
                                                 textOverflow: 'ellipsis',
                                                 maxWidth: '150px',
                                                 display: 'block'
-                                            }}>{room.title}</span>
+                                            }}>{room.name}</span>
                                             <span style={{
                                                 ...tooltipStyle.price,
                                                 color: selectedRoom?.id === room.id ? '#ffffff' : '#3498db',
@@ -292,6 +235,24 @@ const RoomList = () => {
                                             }}>
                                                 {room.price.toLocaleString()}đ
                                             </span>
+                                            <Link 
+                                                to={`/phong/${room.id}`}
+                                                style={{
+                                                    display: 'block',
+                                                    textDecoration: 'none',
+                                                    backgroundColor: selectedRoom?.id === room.id ? '#ffffff' : '#3498db',
+                                                    color: selectedRoom?.id === room.id ? '#3498db' : '#ffffff',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    marginTop: '4px',
+                                                    fontSize: '11px',
+                                                    textAlign: 'center',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Xem chi tiết
+                                            </Link>
                                         </div>
                                     </Tooltip>
                                     <Popup>
@@ -304,7 +265,7 @@ const RoomList = () => {
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
                                                 color: '#2c3e50'
-                                            }}>{room.title}</h5>
+                                            }}>{room.name}</h5>
                                             <p style={{
                                                 fontSize: '14px',
                                                 color: '#7f8c8d',
@@ -325,17 +286,17 @@ const RoomList = () => {
                                                 fontSize: '12px',
                                                 color: '#95a5a6'
                                             }}>
-                                                <span>{room.bedrooms} Phòng</span>
-                                                <span>{room.bathrooms} Phòng tắm</span>
-                                                <span>{room.area}m²</span>
+                                                <span><i className="bi bi-people me-1"></i>{room.numberOfPeople || '-'} Người</span>
+                                                <span><i className="bi bi-star me-1"></i>{room.rate || '-'}</span>
+                                                <span><i className="bi bi-arrows me-1"></i>{room.area || '-'}m²</span>
                                             </div>
                                         </div>
                                     </Popup>
                                 </Marker>
-                                {room.location && (
+                                {room.absoluteLocation && (
                                     <Suspense fallback={null}>
                                         <ZoomToMarker
-                                            position={[room.location.lat, room.location.lng]}
+                                            position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
                                             isSelected={selectedRoom?.id === room.id}
                                         />
                                     </Suspense>
@@ -386,48 +347,65 @@ const RoomList = () => {
 
                 {/* Room Grid */}
                 <div className="row g-4">
-                    {rooms.map(room => (
-                        <div
-                            key={room.id}
-                            className="col-md-6 col-lg-4"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => {
-                                handleRoomClick(room);
-                                if (room.location) {
+                    {rooms.length === 0 ? (
+                        <div className="col-12 text-center">
+                            <p>Không tìm thấy phòng nào.</p>
+                        </div>
+                    ) : (
+                        rooms.map(room => (
+                            <div
+                                key={room.id}
+                                className="col-md-6 col-lg-4"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => {
+                                    handleRoomClick(room);
                                     setSelectedRoom(room);
-                                    // Scroll to map when clicking a room card
                                     window.scrollTo({
                                         top: 0,
                                         behavior: 'smooth'
                                     });
-                                }
-                            }}
-                        >
-                            <div className={`card h-100 border-0 shadow-sm ${selectedRoom?.id === room.id ? 'border border-primary' : ''}`}>
-                                <img src={room.image} className="card-img-top" alt={room.title} style={{ height: '200px', objectFit: 'cover' }} />
-                                <div className="card-body">
-                                    <div className="d-flex justify-content-between align-items-start mb-2">
-                                        <h5 className="card-title mb-0">{room.title}</h5>
-                                        <span className="badge bg-primary">{room.price.toLocaleString()}VND/tháng</span>
-                                    </div>
-                                    <p className="card-text text-muted small mb-3">{room.address}</p>
-                                    <div className="d-flex justify-content-between text-muted small">
-                                        <span><i className="bi bi-house-door me-1"></i>{room.bedrooms} Phòng</span>
-                                        <span><i className="bi bi-droplet me-1"></i>{room.bathrooms} Phòng tắm</span>
-                                        <span><i className="bi bi-arrows me-1"></i>{room.area}m²</span>
+                                }}
+                            >
+                                <div className={`card h-100 border-0 shadow-sm ${selectedRoom?.id === room.id ? 'border border-primary' : ''}`}>
+                                    <img 
+                                        src={room.images && room.images.length > 0 ? room.images[0] : './img/imgLandingPage.png'} 
+                                        className="card-img-top" 
+                                        alt={room.name} 
+                                        style={{ height: '200px', objectFit: 'cover' }} 
+                                    />
+                                    <div className="card-body">
+                                        <div className="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 className="card-title mb-0">{room.name}</h5>
+                                            <span className="badge bg-primary">{room.price.toLocaleString()}VND/tháng</span>
+                                        </div>
+                                        <p className="card-text text-muted small mb-3">{room.address}</p>
+                                        <div className="d-flex justify-content-between text-muted small">
+                                            <span><i className="bi bi-people me-1"></i>{room.numberOfPeople || '-'} Người</span>
+                                            <span><i className="bi bi-star me-1"></i>{room.rate || '-'}</span>
+                                            <span><i className="bi bi-arrows me-1"></i>{room.area || '-'}m²</span>
+                                        </div>
+                                        <div className="mt-3 d-grid">
+                                            <button
+                                                className="btn btn-outline-primary"
+                                                onClick={(e) => handleViewDetail(room.id, e)}
+                                            >
+                                                Xem chi tiết
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
 
-                {/* Load More Button */}
-                <div className="text-center mt-5">
-                    <button className="btn btn-primary px-4">
-                        Xem thêm
-                    </button>
-                </div>
+                {rooms.length > 0 && (
+                    <div className="text-center mt-5">
+                        <button className="btn btn-primary px-4">
+                            Xem thêm
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

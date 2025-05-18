@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { HubConnectionBuilder, HubConnection, HubConnectionState } from '@microsoft/signalr';
+import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import axios from 'axios';
 
 interface Message {

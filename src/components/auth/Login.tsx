@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import type { CredentialResponse } from '@react-oauth/google';
-import { useNavigate} from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -11,6 +11,7 @@ const Login = () => {
         password: '',
     });
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -20,33 +21,35 @@ const Login = () => {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle login logic here
-        console.log('Form submitted:', formData);
+        try {
+            const response = await axios.post('https://localhost:7135/api/Auth/login', formData);
+            const { accessToken, user } = response.data;
+            login(user, accessToken);
+            navigate('/tim-tro');
+        } catch (error) {
+            console.error('Login failed:', error);
+            // Handle error (show message to user)
+        }
     };
 
-    const  handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
+    const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
         if (!credentialResponse.credential) {
-      console.error('No credential received');
-      return;
-    }
+            console.error('No credential received');
+            return;
+        }
 
-    const idtoken = credentialResponse.credential;
-    try {
-      const res = await axios.post('https://localhost:7135/api/Auth/Sign-in-google', {idtoken});
-      const { accessToken} = res.data;
-    localStorage.setItem('accessToken', accessToken);
-     navigate('/tim-tro')
-    } catch (error) {
-      console.log(error)
-    }
-
-    };
-
-    const handleFacebookLogin = () => {
-        // Handle Facebook login here
-        console.log('Facebook login clicked');
+        const idtoken = credentialResponse.credential;
+        try {
+            const response = await axios.post('https://localhost:7135/api/Auth/Sign-in-google', { idtoken });
+            const { accessToken, user } = response.data;
+            login(user, accessToken);
+            navigate('/tim-tro');
+        } catch (error) {
+            console.error('Google login failed:', error);
+            // Handle error (show message to user)
+        }
     };
 
     return (
@@ -106,42 +109,27 @@ const Login = () => {
                                         />
                                     </div>
 
-                                    <button type="submit" className="btn btn-primary w-100 mb-3">
-                                        Đăng nhập
-                                    </button>
-
-                                    <div className="text-center mb-3">
-                                        <p className="text-muted small mb-0">Hoặc đăng nhập với</p>
-                                    </div>
-
-                                    <div className="d-flex gap-2 mb-3">
-                                        
-                                        <GoogleOAuthProvider clientId="104873536196-65tbscmmi8qvsgm1ttm3uq5npl33944i.apps.googleusercontent.com">
-                                              <div className="App">
-                                                <GoogleLogin
-                                                  onSuccess={handleGoogleLogin}
-                                                  onError={() => console.error('Login Failed')}
-                                                />
-                                              </div>
-                                            </GoogleOAuthProvider>
-                                        <button
-                                            type="button"
-                                            className="btn btn-social btn-facebook w-50 d-flex align-items-center justify-content-center gap-2"
-                                            onClick={handleFacebookLogin}
-                                        >
-                                            <img
-                                                src="/img/facebook.svg"
-                                                alt="Facebook"
-                                                style={{ width: '18px', height: '18px' }}
-                                            />
-                                            Facebook
+                                    <div className="d-grid">
+                                        <button type="submit" className="btn btn-primary">
+                                            Đăng nhập
                                         </button>
                                     </div>
-
-                                    <p className="text-center text-muted small">
-                                        Chưa có tài khoản? <Link to="/dang-ky" className="text-primary text-decoration-none">Đăng ký</Link>
-                                    </p>
                                 </form>
+
+                                <div className="text-center mt-4">
+                                    <GoogleOAuthProvider clientId="104873536196-65tbscmmi8qvsgm1ttm3uq5npl33944i.apps.googleusercontent.com">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleLogin}
+                                            onError={() => console.log('Login Failed')}
+                                        />
+                                    </GoogleOAuthProvider>
+                                </div>
+
+                                <div className="text-center mt-3">
+                                    <p className="mb-0">
+                                        Chưa có tài khoản? <Link to="/dang-ky">Đăng ký ngay</Link>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
