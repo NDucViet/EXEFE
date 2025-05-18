@@ -21,7 +21,7 @@ const HeroSection = () => {
                             <div className="me-4">
                                 <Link to="/" className="d-inline-flex align-items-center">
                                     <div className="d-flex align-items-center">
-                                        <img src="./img/logo roomnear.png" alt="RoomNear" style={{ width: '200px', height: '200px' }} />
+                                        <img src="./img/logo-roomnear.png" alt="RoomNear" style={{ width: '200px', height: '200px' }} />
                                     </div>
                                 </Link>
                             </div>
