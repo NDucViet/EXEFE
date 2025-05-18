@@ -17,23 +17,32 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+interface AbsoluteLocation {
+    id: number;
+    ing: number;
+    lat: number;
+    houseId: number;
+}
+
 interface Room {
-    id: string;
-    title: string;
-    price: number;
+    id: number;
+    name: string;
     address: string;
+    ownerId: string;
+    price: number;
+    status: number;
+    numberOfPeople: number | null;
+    area: number | null;
+    description: string | null;
+    createAt: string;
+    rate: number | null;
+    location: number;
+    absoluteLocation: AbsoluteLocation;
     images: string[];
-    rooms: number;
-    description: string;
     contact: {
         name: string;
         phone: string;
-        rating: number;
         avatar: string;
-    };
-    location: {
-        lat: number;
-        lng: number;
     };
 }
 
@@ -46,27 +55,34 @@ const RoomDetail: React.FC = () => {
     useEffect(() => {
         const fetchRoomDetails = () => {
             const mockRoom: Room = {
-                id: '1',
-                title: 'LAM HOME',
-                price: 2000000,
-                address: '21 Thái tự, Đà Nẵng',
+                id: 6,
+                name: "Phòng trọ Minh Tâm",
+                address: "123 Lê Lợi, Đà Nẵng",
+                ownerId: "895c00e7-626c-4568-29f6-08dd719eaf77",
+                price: 1200000,
+                status: 1,
+                numberOfPeople: 2,
+                area: 20.5,
+                description: "Phòng sạch sẽ, an ninh tốt",
+                createAt: "2025-04-20T14:07:47.68",
+                rate: null,
+                location: 1,
+                absoluteLocation: {
+                    id: 1,
+                    ing: 106.68271,
+                    lat: 10.77282,
+                    houseId: 6
+                },
                 images: [
                     '../img/imgLandingPage.png',
                     '../img/imgLandingPage.png',
                     '../img/imgLandingPage.png',
                     '../img/imgLandingPage.png'
                 ],
-                rooms: 3,
-                description: 'Cho thuê phòng trọ giá từ 2 triệu, 2.2 triệu. Nhiều diện tích lựa chọn 10m2, 12m2, 18m2. => Phù hợp cho công nhân, Sinh Viên - Nhà trọ mặt tiền số 1 đường Cầu Xéo phường Tân Sơn Nhì quận Tân Phú. Thuận tiện đi lại. - Phòng sạch sẽ, toilet trong phòng. Có gác lửng. Giá giặt đồ tại tự do. Không chung chủ. - Nhà trọ nằm trong công viên thoáng mát. Bên cạnh trụ sở khu phố an ninh. - Cách AEON 1.5km. Khu nhiều nhà hàng quán ăn kinh doanh sầm uất. - Kế bên trường Cao Đẳng Công Thương. - Gần trường Công Nghệ Thực Phẩm, trường Giao Thông Vận Tải Trung Ương 3. Cao đẳng Lý',
                 contact: {
-                    name: 'Thành Lâm',
-                    phone: '09004500XXX',
-                    rating: 4,
+                    name: 'Minh Tâm',
+                    phone: '0900450000',
                     avatar: '../img/avatar.jpg'
-                },
-                location: {
-                    lat: 16.064167,
-                    lng: 108.245809
                 }
             };
 
@@ -122,8 +138,8 @@ const RoomDetail: React.FC = () => {
                                 <i className="bi bi-camera-video fs-6 text-white"></i>
                             </div>
                             <div>
-                                <div className="text-primary small" style={{ fontSize: '12px' }}>Còn trống {room.rooms} phòng</div>
-                                <div className="fw-bold" style={{ fontSize: '14px', color: '#2F80ED' }}>2.000.000 VNĐ<span style={{ fontSize: '12px' }}>/tháng</span></div>
+                                <div className="text-primary small" style={{ fontSize: '12px' }}>Còn trống {room.numberOfPeople} người</div>
+                                <div className="fw-bold" style={{ fontSize: '14px', color: '#2F80ED' }}>{room.price.toLocaleString()} VNĐ<span style={{ fontSize: '12px' }}>/tháng</span></div>
                             </div>
                         </div>
                     </div>
@@ -154,8 +170,8 @@ const RoomDetail: React.FC = () => {
                                     <i className="bi bi-house-door fs-5 text-white"></i>
                                 </div>
                                 <div>
-                                    <h5 className="mb-1 fw-bold text-primary" style={{ fontSize: '16px' }}>LAM HOME</h5>
-                                    <p className="mb-0 text-muted" style={{ fontSize: '14px' }}>21 Thái tự, Đà Nẵng</p>
+                                    <h5 className="mb-1 fw-bold text-primary" style={{ fontSize: '16px' }}>{room.name}</h5>
+                                    <p className="mb-0 text-muted" style={{ fontSize: '14px' }}>{room.address}</p>
                                 </div>
                             </div>
                         </div>
@@ -168,7 +184,7 @@ const RoomDetail: React.FC = () => {
                         <div className="position-relative">
                             <div style={{ height: '300px', borderRadius: '12px', overflow: 'hidden' }}>
                                 <MapContainer
-                                    center={[room.location.lat, room.location.lng]}
+                                    center={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
                                     zoom={15}
                                     style={{ height: '100%', width: '100%' }}
                                 >
@@ -176,8 +192,8 @@ const RoomDetail: React.FC = () => {
                                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                     />
-                                    <Marker position={[room.location.lat, room.location.lng]}>
-                                        <Popup>21 Thái tự, Đà Nẵng</Popup>
+                                    <Marker position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}>
+                                        <Popup>{room.address}</Popup>
                                     </Marker>
                                 </MapContainer>
                             </div>
@@ -211,19 +227,19 @@ const RoomDetail: React.FC = () => {
                             <div className="d-flex align-items-center mb-3">
                                 <img
                                     src={room.contact.avatar}
-                                    alt="Thành Lâm"
+                                    alt={room.contact.name}
                                     className="rounded-circle me-2"
                                     width="48"
                                     height="48"
                                     style={{ objectFit: 'cover' }}
                                 />
                                 <div>
-                                    <h6 className="mb-1 fw-bold">Thành Lâm</h6>
+                                    <h6 className="mb-1 fw-bold">{room.contact.name}</h6>
                                     <div className="text-warning" style={{ fontSize: '12px' }}>
                                         {[...Array(5)].map((_, index) => (
                                             <i
                                                 key={index}
-                                                className={`bi bi-star${index < 4 ? '-fill' : ''} me-1`}
+                                                className={`bi bi-star${index < (room.rate || 0) ? '-fill' : ''} me-1`}
                                             ></i>
                                         ))}
                                     </div>
@@ -232,7 +248,7 @@ const RoomDetail: React.FC = () => {
                             <div className="mb-3">
                                 <div className="d-flex align-items-center">
                                     <h6 className="mb-0 me-2 fw-bold" style={{ fontSize: '14px' }}>SĐT:</h6>
-                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>09004500XXX</span>
+                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>{room.contact.phone}</span>
                                 </div>
                             </div>
                             <div className="d-grid gap-2">
