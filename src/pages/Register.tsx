@@ -1,26 +1,70 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         confirmPassword: '',
-        fullName: ''
+        phoneNumber: ''
     });
+    const [cccdFrontImage, setCccdFrontImage] = useState<File | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        const { name, value, files } = e.target;
+        if (name === 'cccdFrontImage' && files) {
+            setCccdFrontImage(files[0]);
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Handle registration logic here
-        console.log('Form submitted:', formData);
+        setError(null);
+        setSuccessMessage(null);
+
+        const data = new FormData();
+        data.append('email', formData.email);
+        data.append('password', formData.password);
+        data.append('confirmPassword', formData.confirmPassword);
+        data.append('phoneNumber', formData.phoneNumber);
+        if (cccdFrontImage) {
+            data.append('image', cccdFrontImage);
+        }
+        data.append('phone_number', formData.phoneNumber);
+        try {
+            const response = await fetch('http://localhost:3000/api/auth/register', {
+                method: 'POST',
+                body: data
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Registration successful', result);
+                setSuccessMessage('Đăng ký thành công!'); // Set success message
+                // Redirect to login page after a delay
+                setTimeout(() => {
+                    navigate('/dang-nhap');
+                }, 2000); // Redirect after 2 seconds
+
+            } else {
+                const errorData = await response.json();
+                console.error('Registration failed', errorData);
+                // Assuming errorData has a message field, adjust if needed
+                setError(errorData.message || 'Đăng ký thất bại. Vui lòng thử lại.'); // Set error state
+            }
+        } catch (error) {
+            console.error('Error during registration', error);
+            setError('Đã xảy ra lỗi khi kết nối đến máy chủ. Vui lòng thử lại.');
+        }
     };
 
     return (
@@ -46,6 +90,18 @@ const Register = () => {
                                     <p className="text-muted small">Tạo một tài khoản mới</p>
                                 </div>
 
+                                {error && (
+                                    <div className="alert alert-danger" role="alert">
+                                        {error}
+                                    </div>
+                                )}
+
+                                {successMessage && (
+                                    <div className="alert alert-success" role="alert">
+                                        {successMessage}
+                                    </div>
+                                )}
+
                                 <form onSubmit={handleSubmit}>
                                     <div className="mb-3">
                                         <label htmlFor="email" className="form-label small">Email</label>
@@ -62,14 +118,14 @@ const Register = () => {
                                     </div>
 
                                     <div className="mb-3">
-                                        <label htmlFor="fullName" className="form-label small">Họ và tên</label>
+                                        <label htmlFor="phoneNumber" className="form-label small">Số điện thoại</label>
                                         <input
-                                            type="text"
+                                            type="tel"
                                             className="form-control"
-                                            id="fullName"
-                                            name="fullName"
-                                            placeholder="Nhập họ và tên"
-                                            value={formData.fullName}
+                                            id="phoneNumber"
+                                            name="phoneNumber"
+                                            placeholder="Nhập số điện thoại"
+                                            value={formData.phoneNumber}
                                             onChange={handleChange}
                                             required
                                         />
@@ -99,6 +155,19 @@ const Register = () => {
                                             placeholder="Nhập lại mật khẩu"
                                             value={formData.confirmPassword}
                                             onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label htmlFor="cccdFrontImage" className="form-label small">Ảnh mặt trước CCCD</label>
+                                        <input
+                                            type="file"
+                                            className="form-control"
+                                            id="cccdFrontImage"
+                                            name="cccdFrontImage"
+                                            onChange={handleChange}
+                                            accept="image/*"
                                             required
                                         />
                                     </div>

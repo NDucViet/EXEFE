@@ -66,9 +66,7 @@ const Header = () => {
                             <li className="nav-item">
                                 <Link to="/dang-tin" className="nav-link px-3">Đăng tin</Link>
                             </li>
-                            <li className="nav-item">
-                                <Link to="/cong-dong" className="nav-link px-3">Cộng đồng</Link>
-                            </li>
+                            
                             <li className="nav-item">
                                 <Link to="/chu-ho" className="nav-link px-3">Chủ hộ</Link>
                             </li>

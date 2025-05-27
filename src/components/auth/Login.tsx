@@ -10,6 +10,7 @@ const Login = () => {
         email: '',
         password: '',
     });
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
     const { login } = useAuth();
 
@@ -23,14 +24,31 @@ const Login = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+
         try {
-            const response = await axios.post('https://localhost:7135/api/Auth/login', formData);
-            const { accessToken, user } = response.data;
-            login(user, accessToken);
-            navigate('/tim-tro');
+            const response = await fetch('http://localhost:3000/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Login successful:', result);
+                const { accessToken, user } = result;
+                login(user, accessToken);
+                navigate('/');
+            } else {
+                const errorData = await response.json();
+                console.error('Login failed:', errorData);
+                setError(errorData.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại email và mật khẩu.');
+            }
         } catch (error) {
-            console.error('Login failed:', error);
-            // Handle error (show message to user)
+            console.error('Error during login:', error);
+            setError('Đã xảy ra lỗi khi kết nối đến máy chủ. Vui lòng thử lại.');
         }
     };
 
@@ -74,6 +92,12 @@ const Login = () => {
                                     <h2 className="h4 mb-1">Đăng nhập</h2>
                                     <p className="text-muted small">Chào mừng bạn trở lại</p>
                                 </div>
+
+                                {error && (
+                                    <div className="alert alert-danger" role="alert">
+                                        {error}
+                                    </div>
+                                )}
 
                                 <form onSubmit={handleSubmit}>
                                     <div className="mb-3">
