@@ -1,0 +1,175 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import CreateRoomModal from '../components/CreateRoomModal';
+
+interface Room {
+    id: number;
+    address: string;
+    description: string;
+    area: number;
+    houseImages: string[] | null;
+    comments: any[];
+    appUser: {
+        id: string;
+        displayName: string;
+        number: string;
+        email: string | null;
+        avatar: string | null;
+        isDisable: boolean;
+    };
+}
+
+const LandlordPage = () => {
+    const [rooms, setRooms] = useState<Room[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const navigate = useNavigate();
+    
+
+    useEffect(() => {
+        // Check if user has role 1 from localStorage
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) {
+            navigate('/');
+            return;
+        }    
+        
+        const user = JSON.parse(storedUser);
+        console.log(user);    
+        if (user.role == 2) {
+            navigate('/');
+            return;
+        }
+        fetchLandlordRooms();
+    }, [navigate]);
+
+    const fetchLandlordRooms = async () => {
+        try {
+            const response = await axios.get('https://localhost:7135/api/House/GetAllHouseByUser', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            setRooms(response.data);
+            setLoading(false);
+        } catch (err) {
+            setError('Failed to fetch rooms');
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteRoom = async (houseid: number) => {
+        if (window.confirm('Are you sure you want to delete this room?')) {
+            try {
+                await axios.delete(`https://localhost:7135/api/House/DeleteHouse?houseid=${houseid}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
+                fetchLandlordRooms(); // Refresh the list
+            } catch (err) {
+                setError('Failed to delete room');
+            }
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="alert alert-danger m-3" role="alert">
+                {error}
+            </div>
+        );
+    }
+
+    return (
+        <div className="container py-4">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h2>Quản lý phòng trọ</h2>
+                <button 
+                    className="btn btn-primary"
+                    onClick={() => setShowCreateModal(true)}
+                >
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Thêm phòng mới
+                </button>
+            </div>
+
+            {rooms.length === 0 ? (
+                <div className="text-center py-5">
+                    <h4 className="text-muted">Bạn chưa có phòng trọ nào</h4>
+                    <p className="text-muted">Hãy thêm phòng trọ đầu tiên của bạn!</p>
+                </div>
+            ) : (
+                <div className="row g-4">
+                    {rooms.map(room => (
+                        <div key={room.id} className="col-md-6 col-lg-4">
+                            <div className="card h-100 border-0 shadow-sm">
+                                <img 
+                                    src={room.houseImages && room.houseImages.length > 0 ? room.houseImages[0] : './img/imgLandingPage.png'} 
+                                    className="card-img-top" 
+                                    alt={room.address} 
+                                    style={{ height: '200px', objectFit: 'cover' }} 
+                                />
+                                <div className="card-body">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 className="card-title mb-0">{room.address}</h5>
+                                        <span className="badge bg-primary">{room.area.toLocaleString()}m²</span>
+                                    </div>
+                                    <p className="card-text text-muted small mb-3">{room.description}</p>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <span className="text-muted small">
+                                            <i className="bi bi-chat-dots me-1"></i>
+                                            {room.comments.length} bình luận
+                                        </span>
+                                        <div className="btn-group">
+                                            <button
+                                                className="btn btn-outline-primary btn-sm"
+                                                onClick={() => navigate(`/phong/${room.id}`)}
+                                            >
+                                                <i className="bi bi-eye me-1"></i>
+                                                Xem
+                                            </button>
+                                            <button
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={() => handleDeleteRoom(room.id)}
+                                            >
+                                                <i className="bi bi-trash me-1"></i>
+                                                Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <CreateRoomModal 
+                show={showCreateModal}
+                onHide={() => setShowCreateModal(false)}
+                onSubmit={(roomData) => {
+                    console.log(roomData);
+                    setShowCreateModal(false);
+                    fetchLandlordRooms(); // Refresh the room list after creating a new room
+                }}
+                fetchRooms={fetchLandlordRooms}
+            />
+        </div>
+    );
+};
+
+export default LandlordPage; 

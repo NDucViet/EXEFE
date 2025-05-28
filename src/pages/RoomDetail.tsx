@@ -20,9 +20,23 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface AbsoluteLocation {
     id: number;
-    ing: number;
-    lat: number;
-    houseId: number;
+    latitude: number;
+    longitude: number;
+}
+
+interface AppUser {
+    id: string;
+    displayName: string;
+    number: string;
+    email: string | null;
+    avatar: string | null;
+    isDisable: boolean;
+}
+
+// Thêm interface cho houseImages
+interface HouseImage {
+    id: number;
+    imageUrl: string;
 }
 
 interface Room {
@@ -39,31 +53,57 @@ interface Room {
     rate: number | null;
     location: number;
     absoluteLocation: AbsoluteLocation;
-    images: string[];
+    images?: string[];
+    houseImages: HouseImage[];
+    appUser: AppUser;
 }
 
 const RoomDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [room, setRoom] = useState<Room | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Default center coordinates (Da Nang)
+    const defaultCenter: [number, number] = [16.047079, 108.206230];
+
+    // Get valid map center coordinates
+    const getMapCenter = (room: Room | null): [number, number] => {
+        if (!room?.absoluteLocation) return defaultCenter;
+        
+        const { latitude, longitude } = room.absoluteLocation;
+        
+        if (typeof latitude === 'number' && !isNaN(latitude) &&
+            typeof longitude === 'number' && !isNaN(longitude)) {
+            return [latitude, longitude];
+        }
+        
+        return defaultCenter;
+    };
 
     useEffect(() => {
-        const fetchRoomDetails = async () => {
+        const fetchRoomDetail = async () => {
             try {
                 const response = await axios.get(`https://localhost:7135/api/House/GetHouseById?id=${id}`);
-                const data = await response.data;
-                setRoom(data);
+                if (!response.data) {
+                    throw new Error('No data received from server');
+                }
+                setRoom(response.data);
+                console.log(response.data);
                 setLoading(false);
             } catch (error) {
                 console.error('Error fetching room details:', error);
+                setError(error instanceof Error ? error.message : 'Failed to load room details');
                 setLoading(false);
             }
         };
 
-        fetchRoomDetails();
+        if (id) {
+            fetchRoomDetail();
+        }
     }, [id]);
 
-    if (loading || !room) {
+    if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
                 <div className="spinner-border text-primary" role="status">
@@ -73,9 +113,21 @@ const RoomDetail: React.FC = () => {
         );
     }
 
+    if (error || !room) {
+        return (
+            <div className="alert alert-danger m-3" role="alert">
+                {error || 'Room not found'}
+            </div>
+        );
+    }
+
+    const mapCenter = getMapCenter(room);
+
+    // Lấy danh sách url ảnh từ houseImages
+    const imageUrls = room.houseImages?.map((img: { imageUrl: string }) => img.imageUrl) || [];
     const defaultImage = '/img/imgLandingPage.png';
-    const mainImage = room.images && room.images.length > 0 ? room.images[0] : defaultImage;
-    const additionalImages = room.images && room.images.length > 1 ? room.images.slice(1, 4) : [];
+    const mainImage = imageUrls.length > 0 ? imageUrls[0] : defaultImage;
+    const additionalImages = imageUrls.length > 1 ? imageUrls.slice(1, 4).map(url => url) : [];
 
     return (
         <div 
@@ -100,8 +152,10 @@ const RoomDetail: React.FC = () => {
                                 <i className="bi bi-camera-video fs-6 text-white"></i>
                             </div>
                             <div>
-                                <div className="text-primary small" style={{ fontSize: '12px' }}>Còn trống {room.numberOfPeople} người</div>
-                                <div className="fw-bold" style={{ fontSize: '14px', color: '#2F80ED' }}>{room.price.toLocaleString()} VNĐ<span style={{ fontSize: '12px' }}>/tháng</span></div>
+                                <div className="text-primary small" style={{ fontSize: '12px' }}>Còn trống {room.numberOfPeople || 0} người</div>
+                                <div className="fw-bold" style={{ fontSize: '14px', color: '#2F80ED' }}>
+                                    {room.price ? room.price.toLocaleString() : '0'} VNĐ<span style={{ fontSize: '12px' }}>/tháng</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -110,13 +164,23 @@ const RoomDetail: React.FC = () => {
                     <div className="container-fluid px-0">
                         <div className="row g-2">
                             <div className="col-12 col-md-8">
-                                <img src={mainImage} alt="Ảnh chính" className="w-100" style={{ height: '350px', objectFit: 'cover', borderRadius: '8px' }} />
+                                <img
+                                    src={mainImage}
+                                    alt="Ảnh chính"
+                                    className="w-100"
+                                    style={{ height: '350px', objectFit: 'cover', borderRadius: '8px' }}
+                                />
                             </div>
                             <div className="col-md-4 d-none d-md-block">
                                 <div className="row g-2">
-                                    {additionalImages.map((image, index) => (
+                                    {additionalImages.map((url, index) => (
                                         <div key={index} className="col-12">
-                                            <img src={image} alt={`Ảnh phòng ${index + 2}`} className="w-100" style={{ height: '114px', objectFit: 'cover', borderRadius: '8px' }} />
+                                            <img
+                                                src={url}
+                                                alt={`Ảnh phòng ${index + 2}`}
+                                                className="w-100"
+                                                style={{ height: '114px', objectFit: 'cover', borderRadius: '8px' }}
+                                            />
                                         </div>
                                     ))}
                                 </div>
@@ -146,7 +210,7 @@ const RoomDetail: React.FC = () => {
                         <div className="position-relative">
                             <div style={{ height: '300px', borderRadius: '12px', overflow: 'hidden' }}>
                                 <MapContainer
-                                    center={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
+                                    center={mapCenter}
                                     zoom={15}
                                     style={{ height: '100%', width: '100%' }}
                                 >
@@ -154,9 +218,15 @@ const RoomDetail: React.FC = () => {
                                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                     />
-                                    <Marker position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}>
-                                        <Popup>{room.address}</Popup>
-                                    </Marker>
+                                    {room.absoluteLocation && 
+                                     typeof room.absoluteLocation.latitude === 'number' && 
+                                     !isNaN(room.absoluteLocation.latitude) &&
+                                     typeof room.absoluteLocation.longitude === 'number' && 
+                                     !isNaN(room.absoluteLocation.longitude) && (
+                                        <Marker position={[room.absoluteLocation.latitude, room.absoluteLocation.longitude]}>
+                                            <Popup>{room.address}</Popup>
+                                        </Marker>
+                                    )}
                                 </MapContainer>
                             </div>
                             <div className="position-absolute bottom-0 start-0 w-100 p-2 d-flex justify-content-between">
@@ -210,7 +280,9 @@ const RoomDetail: React.FC = () => {
                             <div className="mb-3">
                                 <div className="d-flex align-items-center">
                                     <h6 className="mb-0 me-2 fw-bold" style={{ fontSize: '14px' }}>SĐT:</h6>
-                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>1232341341</span>
+                                    <span className="text-primary fw-bold" style={{ fontSize: '14px' }}>
+                                        {room.appUser?.number || 'Chưa cập nhật'}
+                                    </span>
                                 </div>
                             </div>
                             <div className="d-grid gap-2">

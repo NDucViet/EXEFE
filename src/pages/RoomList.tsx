@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Fix Leaflet default marker icon issue
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -12,6 +13,7 @@ import axios from 'axios';
 
 // Lazy load components
 const ZoomToMarker = lazy(() => import('../components/ZoomToMarker'));
+const CreateRoomModal = lazy(() => import('../components/CreateRoomModal'));
 
 const DefaultIcon = L.icon({
     iconUrl: icon,
@@ -49,26 +51,42 @@ const tooltipStyle = {
 
 interface AbsoluteLocation {
     id: number;
-    ing: number;
     lat: number;
-    houseId: number;
+    ing: number;
+}
+
+interface Comment {
+    id: number;
+    content: string;
+    createdAt: string;
+}
+
+interface AppUser {
+    id: string;
+    displayName: string;
+    number: string;
+    email: string | null;
+    avatar: string | null;
+    isDisable: boolean;
+    location?: UserLocation;
 }
 
 interface Room {
     id: number;
-    name: string;
     address: string;
-    ownerId: string;
-    price: number;
-    status: number;
-    numberOfPeople: number | null;
-    area: number | null;
-    description: string | null;
-    createAt: string;
-    rate: number | null;
-    location: number;
+    description: string;
+    area: number;
     absoluteLocation: AbsoluteLocation;
-    images: string[];
+    houseImages: string[] | null;
+    comments: Comment[];
+    appUser: AppUser;
+}
+
+interface UserLocation {
+    id?: number;
+    lat: number;
+    ing: number;
+    userId?: string;
 }
 
 const RoomList = () => {
@@ -78,24 +96,52 @@ const RoomList = () => {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const fetchUserInfo = async () => {
+        try {
+            const response = await axios.get('https://localhost:7135/api/User/UserDetail', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+                }
+            });
+            if (response.data && response.data.userLocation) {
+                setUserLocation({
+                    id: response.data.userLocation.id,
+                    lat: response.data.userLocation.lat,
+                    ing: response.data.userLocation.ing
+                });
+            }
+        } catch (err) {
+            console.error('Failed to fetch user info:', err);
+        }
+    };
 
     useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                const response = await axios.post('https://localhost:7135/api/House/GetAllHouse');
-                if (!response.data) {
-                    throw new Error('Failed to fetch rooms');
-                }
-                const data = await response.data;
-                setRooms(data);
-                setLoading(false);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'An error occurred');
-                setLoading(false);
-            }
-        };
+        if (user) {
+            fetchUserInfo();
+        }
+    }, [user]);
 
+    const fetchRooms = async () => {
+        try {
+            const response = await axios.post('https://localhost:7135/api/House/GetAllHouse');
+            if (!response.data) {
+                throw new Error('Failed to fetch rooms');
+            }
+            const data = await response.data;
+            setRooms(data);
+            setLoading(false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchRooms();
     }, []);
 
@@ -115,22 +161,38 @@ const RoomList = () => {
         }
     };
 
-    // Calculate center position based on all room locations
-    const center = rooms.reduce(
-        (acc, room) => {
-            if (room.absoluteLocation) {
-                acc.lat += room.absoluteLocation.lat;
-                acc.lng += room.absoluteLocation.ing;
-            }
-            return acc;
-        },
-        { lat: 16.047079, lng: 108.206230 } // Default center (Da Nang city)
-    );
+    // Calculate center position based on user location or room locations
+    const center = userLocation ? 
+        { lat: userLocation.lat, lng: userLocation.ing, count: 1 } :
+        rooms.reduce(
+            (acc, room) => {
+                if (room.appUser?.location && 
+                    typeof room.appUser.location.lat === 'number' && 
+                    !isNaN(room.appUser.location.lat) &&
+                    typeof room.appUser.location.ing === 'number' && 
+                    !isNaN(room.appUser.location.ing)) {
+                    acc.lat += room.appUser.location.lat;
+                    acc.lng += room.appUser.location.ing;
+                    acc.count++;
+                }
+                return acc;
+            },
+            { lat: 0, lng: 0, count: 0 }
+        );
 
-    if (rooms.length > 0) {
-        center.lat /= rooms.length;
-        center.lng /= rooms.length;
-    }
+    // Default to Da Nang coordinates if no valid coordinates found
+    const defaultCenter: [number, number] = [16.047079, 108.206230];
+
+    // Calculate average only if we have valid coordinates
+    const mapCenter: [number, number] = center.count > 0
+        ? [center.lat / center.count, center.lng / center.count]
+        : defaultCenter;
+
+    // Validate the calculated center
+    const finalCenter: [number, number] = [
+        isNaN(mapCenter[0]) ? defaultCenter[0] : mapCenter[0],
+        isNaN(mapCenter[1]) ? defaultCenter[1] : mapCenter[1]
+    ];
 
     if (loading) {
         return (
@@ -154,15 +216,15 @@ const RoomList = () => {
         <div className="room-list-page" style={{ backgroundImage: 'url("./img/backgroundRoomList.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', minHeight: '100vh', padding: '2rem' }}>
             {/* Map Section - Increased height */}
             <div style={{
-                height: '600px', // Increased from 400px to 600px
+                height: '600px',
                 width: '100%',
-                marginBottom: '2rem', // Added margin for better spacing
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)', // Added subtle shadow
-                borderRadius: '8px', // Added rounded corners
-                overflow: 'hidden' // Ensure the border radius works with the map
+                marginBottom: '2rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                borderRadius: '8px',
+                overflow: 'hidden'
             }}>
                 <MapContainer
-                    center={[center.lat, center.lng]}
+                    center={finalCenter}
                     zoom={12}
                     style={{ height: '100%', width: '100%' }}
                     scrollWheelZoom={true}
@@ -173,15 +235,30 @@ const RoomList = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
+                    {/* Đoạn code này map qua mảng rooms để hiển thị marker cho mỗi phòng trọ trên bản đồ */}
                     {rooms.map((room) => (
-                        room.absoluteLocation && (
+                        /* Kiểm tra điều kiện để đảm bảo phòng có vị trí hợp lệ:
+                           1. Phải có absoluteLocation
+                           2. Latitude phải là số và không phải NaN  
+                           3. Longitude phải là số và không phải NaN
+                           
+                           Nếu thiếu các điều kiện này, marker sẽ không hiển thị được
+                           Cần đảm bảo dữ liệu room.absoluteLocation được set đúng từ API
+                        */
+                        room.absoluteLocation &&
+                        typeof room.absoluteLocation.lat === 'number' && 
+                        !isNaN(room.absoluteLocation.lat) &&
+                        typeof room.absoluteLocation.ing === 'number' && 
+                        !isNaN(room.absoluteLocation.ing) && (
                             <React.Fragment key={room.id}>
+                                {/* Marker đánh dấu vị trí phòng trên bản đồ */}
                                 <Marker
                                     position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
                                     eventHandlers={{
                                         click: () => handleRoomClick(room),
                                     }}
                                 >
+                                    {/* Tooltip hiển thị thông tin khi hover vào marker */}
                                     <Tooltip
                                         permanent
                                         direction="top"
@@ -226,14 +303,14 @@ const RoomList = () => {
                                                 textOverflow: 'ellipsis',
                                                 maxWidth: '150px',
                                                 display: 'block'
-                                            }}>{room.name}</span>
+                                            }}>{room.address}</span>
                                             <span style={{
                                                 ...tooltipStyle.price,
                                                 color: selectedRoom?.id === room.id ? '#ffffff' : '#3498db',
                                                 fontWeight: selectedRoom?.id === room.id ? '600' : 'bold',
                                                 fontSize: '11px'
                                             }}>
-                                                {room.price.toLocaleString()}đ
+                                                {room.area?.toLocaleString() || '0'}m²
                                             </span>
                                             <Link 
                                                 to={`/phong/${room.id}`}
@@ -265,18 +342,18 @@ const RoomList = () => {
                                                 fontWeight: 'bold',
                                                 marginBottom: '8px',
                                                 color: '#2c3e50'
-                                            }}>{room.name}</h5>
+                                            }}>{room.address}</h5>
                                             <p style={{
                                                 fontSize: '14px',
                                                 color: '#7f8c8d',
                                                 marginBottom: '5px'
-                                            }}>{room.address}</p>
+                                            }}>{room.description}</p>
                                             <p style={{
                                                 fontSize: '15px',
                                                 fontWeight: 'bold',
                                                 color: '#3498db',
                                                 marginBottom: '0'
-                                            }}>Giá: {room.price.toLocaleString()}VND/tháng</p>
+                                            }}>Diện tích: {room.area?.toLocaleString() || '0'}m²</p>
                                             <div style={{
                                                 marginTop: '8px',
                                                 padding: '5px 0',
@@ -286,14 +363,16 @@ const RoomList = () => {
                                                 fontSize: '12px',
                                                 color: '#95a5a6'
                                             }}>
-                                                <span><i className="bi bi-people me-1"></i>{room.numberOfPeople || '-'} Người</span>
-                                                <span><i className="bi bi-star me-1"></i>{room.rate || '-'}</span>
-                                                <span><i className="bi bi-arrows me-1"></i>{room.area || '-'}m²</span>
+                                                <span><i className="bi bi-people me-1"></i>{room.appUser?.displayName || '-'}</span>
                                             </div>
                                         </div>
                                     </Popup>
                                 </Marker>
-                                {room.absoluteLocation && (
+                                {room.absoluteLocation && 
+                                 typeof room.absoluteLocation.lat === 'number' && 
+                                 !isNaN(room.absoluteLocation.lat) &&
+                                 typeof room.absoluteLocation.ing === 'number' && 
+                                 !isNaN(room.absoluteLocation.ing) && (
                                     <Suspense fallback={null}>
                                         <ZoomToMarker
                                             position={[room.absoluteLocation.lat, room.absoluteLocation.ing]}
@@ -309,8 +388,16 @@ const RoomList = () => {
 
             {/* Content Section - Adjusted spacing */}
             <div className="container py-4"> {/* Reduced top padding due to increased map height */}
-                <h2 className="text-center mb-3">GẦN BẠN</h2>
-                <p className="text-center text-muted mb-4">Những căn phòng gần vị trí của bạn nhất</p>
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 className="mb-0">GẦN BẠN</h2>
+                        <p className="text-muted mb-0">Những căn phòng gần vị trí của bạn nhất</p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                        <i className="bi bi-plus-circle me-2"></i>
+                        Tạo trọ mới
+                    </button>
+                </div>
 
                 {/* Filters */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
@@ -368,21 +455,19 @@ const RoomList = () => {
                             >
                                 <div className={`card h-100 border-0 shadow-sm ${selectedRoom?.id === room.id ? 'border border-primary' : ''}`}>
                                     <img 
-                                        src={room.images && room.images.length > 0 ? room.images[0] : './img/imgLandingPage.png'} 
+                                        src={room.houseImages && room.houseImages.length > 0 ? room.houseImages[0] : './img/imgLandingPage.png'} 
                                         className="card-img-top" 
-                                        alt={room.name} 
+                                        alt={room.address} 
                                         style={{ height: '200px', objectFit: 'cover' }} 
                                     />
                                     <div className="card-body">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
-                                            <h5 className="card-title mb-0">{room.name}</h5>
-                                            <span className="badge bg-primary">{room.price.toLocaleString()}VND/tháng</span>
+                                            <h5 className="card-title mb-0">{room.address}</h5>
+                                            <span className="badge bg-primary">{room.area.toLocaleString()}m²</span>
                                         </div>
-                                        <p className="card-text text-muted small mb-3">{room.address}</p>
+                                        <p className="card-text text-muted small mb-3">{room.description}</p>
                                         <div className="d-flex justify-content-between text-muted small">
-                                            <span><i className="bi bi-people me-1"></i>{room.numberOfPeople || '-'} Người</span>
-                                            <span><i className="bi bi-star me-1"></i>{room.rate || '-'}</span>
-                                            <span><i className="bi bi-arrows me-1"></i>{room.area || '-'}m²</span>
+                                            <span><i className="bi bi-people me-1"></i>{room.appUser?.displayName || '-'}</span>
                                         </div>
                                         <div className="mt-3 d-grid">
                                             <button
@@ -407,6 +492,19 @@ const RoomList = () => {
                     </div>
                 )}
             </div>
+
+            <Suspense fallback={null}>
+                <CreateRoomModal 
+                    show={showCreateModal}
+                    onHide={() => setShowCreateModal(false)}
+                    onSubmit={(roomData) => {
+                        console.log(roomData);
+                        setShowCreateModal(false);
+                        fetchRooms(); // Refresh the room list after creating a new room
+                    }}
+                    fetchRooms={fetchRooms}
+                />
+            </Suspense>
         </div>
     );
 };

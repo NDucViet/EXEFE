@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
-        email: '',
+        userName: '',
         password: '',
     });
     const navigate = useNavigate();
@@ -24,10 +24,11 @@ const Login = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('https://localhost:7135/api/Auth/login', formData);
-            const { accessToken, user } = response.data;
-            login(user, accessToken);
+            const response = await axios.post('https://localhost:7135/api/Auth/Login', formData);
+            const { accessToken, appUser } = response.data;
+            login(accessToken, appUser);
             navigate('/tim-tro');
+             window.location.reload();
         } catch (error) {
             console.error('Login failed:', error);
             // Handle error (show message to user)
@@ -43,9 +44,11 @@ const Login = () => {
         const idtoken = credentialResponse.credential;
         try {
             const response = await axios.post('https://localhost:7135/api/Auth/Sign-in-google', { idtoken });
-            const { accessToken, user } = response.data;
-            login(user, accessToken);
+            const { accessToken, appUser } = response.data;
+            localStorage.setItem('idtoken', idtoken);
+            login(accessToken, appUser);
             navigate('/tim-tro');
+            window.location.reload();
         } catch (error) {
             console.error('Google login failed:', error);
             // Handle error (show message to user)
@@ -77,14 +80,14 @@ const Login = () => {
 
                                 <form onSubmit={handleSubmit}>
                                     <div className="mb-3">
-                                        <label htmlFor="email" className="form-label small">Email</label>
+                                        <label htmlFor="text" className="form-label small">Email & UserName</label>
                                         <input
-                                            type="email"
+                                            type="text"
                                             className="form-control"
-                                            id="email"
-                                            name="email"
+                                            id="userName"
+                                            name="userName"
                                             placeholder="Nhập email"
-                                            value={formData.email}
+                                            value={formData.userName}
                                             onChange={handleChange}
                                             required
                                         />

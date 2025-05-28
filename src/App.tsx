@@ -8,11 +8,13 @@ import RoomList from './pages/RoomList';
 import RoomDetail from './pages/RoomDetail';
 import Community from './pages/Community';
 import Login from './components/auth/Login';
+import Profile from './pages/Profile';
 import AIChatBox from './components/chat/AIChatBox';
 import { AuthProvider } from './contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './styles/main.css';
+import LandlordPage from './pages/LandlordPage';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +32,13 @@ const App: React.FC = () => {
               <Route path="/dang-nhap" element={<Login />} />
               <Route path="/phong/:id" element={<RoomDetail />} />
               <Route path="/cong-dong" element={<Community />} />
+              <Route path="/ho-so" element={<Profile />} />
+              <Route 
+                path="/chu-ho" 
+                element={
+                    <LandlordPage />
+                } 
+              />
             </Routes>
           </main>
           <Footer />
